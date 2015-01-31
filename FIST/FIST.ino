@@ -1,3 +1,5 @@
+const bool debugMode = true;
+
 //PINS
 const int pinBtn = 2;
 const int pinFlex = A0;
@@ -15,17 +17,29 @@ int msAccZ;    //330 when tilted 90°,400 when flat on board, 260 upside down.
 bool msButton; //0 when pressed, 1 when not pressed.
 
 //STATES
-bool stAuto = false;
+volatile bool stAuto = false;
 
 void setup() {
   Serial.begin(9600);
   pinMode(pinBtn,INPUT_PULLUP);
+  attachInterrupt(0, buttonPress, FALLING);
+}
+
+void buttonPress(){
+  Serial.println("M"); //Mode
+  stAuto = !stAuto;
 }
 
 void loop() {
-  Measurements();
-  serialDebug();
-  delay(1000);
+  if(!stAuto){
+    Measurements();
+    SerialCommands();
+  }
+  
+  if(debugMode){
+    SerialDebug();
+    delay(1000);
+  }
 }
 
 void Measurements(){
@@ -37,7 +51,7 @@ void Measurements(){
   msAccZ = analogRead(pinAccZ);
 }
 
-void serialDebug(){
+void SerialDebug(){
   Serial.print("Btn: "); Serial.print(msButton);
   Serial.print(" | Flex: "); Serial.print(msFlex);
   Serial.print(" | Touch: "); Serial.print(msTouch);
@@ -46,6 +60,12 @@ void serialDebug(){
   Serial.print(" Z: "); Serial.println(msAccZ);
 }
 
-void serialCommands(){
-
+void SerialCommands(){
+  if(msFlex > 700){
+    Serial.print("S");Serial.println(msFlex);} //Speed x
+    
+  if(msTouch < 400){
+    Serial.println("BL");} //Bridge Lower
+  else if(msTouch > 800){
+    Serial.println("BR");} //Bridge Raise
 }
