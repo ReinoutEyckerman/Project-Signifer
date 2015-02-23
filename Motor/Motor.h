@@ -8,18 +8,26 @@ Released into the public domain.
 
 #include "Arduino.h"
 
-//See .cpp file for comments on the functions.
 class Motor
 {
   public:
+	//Constructor: Takes the 2 pins of the H-bridge.
     Motor(int pinForward, int pinBackward);
-    void DriveForward(unsigned int power);
-	void DriveForward();
-    void DriveBackward(unsigned int power);
-	void DriveBackward();
+
+	//Drive forward with the PWM power given as argument (0-255).
+    void DriveForward(byte power = 255);
+
+	//Drive backward with the PWM power given as argument (0-255).
+    void DriveBackward(byte power = 255);
+
+	//"Fast Motor Stop" function of the L293D IC.
     void Stop();   
+
   private:
+	//Pin number for H-bridge forward.
    int _pinForward;
+
+   //Pin number for H-bridge backward.
    int _pinBackward; 
 };
 
