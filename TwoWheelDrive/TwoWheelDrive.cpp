@@ -4,38 +4,59 @@ Created by Oliver Hofkens, February 2015.
 Released into the public domain.
 */
 #include "Arduino.h"
-#include "Motor.h"
 #include "TwoWheelDrive.h"
+#include "Motor.h"
 
-TwoWheelDrive::TwoWheelDrive(Motor motorLeft, Motor motorRight){
-	_leftMotor = motorLeft;
-	_rightMotor = motorRight;
-}
-
-void TwoWheelDrive::TwoWheelDrive(int leftForward, int leftBackward, int rightForward, int rightBackward){
-	_leftMotor(leftForward, leftBackward);
-	_rightMotor(rightForward, rightBackward);
-}
-
-
-void TwoWheelDrive::Forward(byte power = 255){
+void TwoWheelDrive::Forward(byte power){
 	_leftMotor.DriveForward(power);
 	_rightMotor.DriveForward(power);
 }
 
-void TwoWheelDrive::Backward(byte power = 255){
+void TwoWheelDrive::Forward(){
+	Forward(255);
+}
+
+void TwoWheelDrive::Backward(byte power){
 	_leftMotor.DriveBackward(power);
 	_rightMotor.DriveBackward(power);
 }
 
-void TwoWheelDrive::RotateLeft(byte powerBack = 255, byte powerForward = 255){
+void TwoWheelDrive::Backward(){
+	Backward(255);
+}
+
+void TwoWheelDrive::RotateLeft(byte powerBack, byte powerForward){
 	_leftMotor.DriveBackward(powerBack);
 	_rightMotor.DriveForward(powerForward);
 }
 
-void TwoWheelDrive::RotateRight(byte powerBack = 255, byte powerForward = 255){
+void TwoWheelDrive::RotateLeft(){
+	RotateLeft(255, 255);
+}
+
+void TwoWheelDrive::RotateRight(byte powerBack, byte powerForward){
 	_leftMotor.DriveForward(powerForward);
 	_rightMotor.DriveBackward(powerBack);
+}
+
+void TwoWheelDrive::RotateRight(){
+	RotateRight(255, 255);
+}
+
+void TwoWheelDrive::PivotLeft(byte power){
+	RotateLeft(0,power);
+}
+
+void TwoWheelDrive::PivotLeft(){
+	PivotLeft(255);
+}
+
+void TwoWheelDrive::PivotRight(byte power){
+	RotateRight(0, power);
+}
+
+void TwoWheelDrive::PivotRight(){
+	PivotRight(255);
 }
 
 void TwoWheelDrive::Stop(){

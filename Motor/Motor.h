@@ -15,10 +15,16 @@ class Motor
     Motor(int pinForward, int pinBackward);
 
 	//Drive forward with the PWM power given as argument (0-255).
-    void DriveForward(byte power = 255);
+    void DriveForward(byte power);
+
+	//Arduino doesn't understand default arguments.
+	void DriveForward();
 
 	//Drive backward with the PWM power given as argument (0-255).
-    void DriveBackward(byte power = 255);
+    void DriveBackward(byte power);
+
+	//Arduino doesn't understand default arguments.
+	void DriveBackward();
 
 	//"Fast Motor Stop" function of the L293D IC.
     void Stop();   
