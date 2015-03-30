@@ -3,34 +3,23 @@
   Created by Oliver Hofkens, December 22, 2014.
 
   This code released into public domain.
-  CHECK AVERAGE & FILTER LIBRARIES FOR LICENSE INFO!
 */
 
 #include "Arduino.h"
-#include "Filter.h"
-#include "MedianFilter.h"
 #include "SharpIRDistance.h"
 
-SharpIRDistance::SharpIRDistance()
-{}
-
-//Begin, zet _pin variabele en start de filter.
-void SharpIRDistance::begin(int pin)
+SharpIRDistance::SharpIRDistance(int pin)
 {
-  _pin = pin;
-  _filter.begin();
+	_pin = pin;
 }
 
-//Lees analoge waarde van sensor, bereken hieruit afstand (zie vorige labo voor details),
-//filter deze waarde adhv de firFilter, en push deze dan in onze rollingAverage circular buffers.
+//Lees analoge waarde van sensor, bereken hieruit afstand.
 int SharpIRDistance::getDistance()
 {
   int analogDistance = analogRead(_pin);
   int distanceCentimeters = 1/(0.0004*analogDistance-0.0081);
-
-  int filteredValue = _filter.run(distanceCentimeters);
   
-  return filteredValue;
+  return distanceCentimeters;
 }
 
 //Indien laatste meting kleiner is dan gegeven parameter, return true.
