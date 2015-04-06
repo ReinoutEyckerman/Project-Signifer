@@ -1,12 +1,23 @@
 #include <Motor.h>
 #include <TwoWheelDrive.h>
+#include <SharpIRDistance.h>
+#include <SensorController.h>
 
 const int LeftDriverForward = 6;
 const int LeftDriverBackward = 5;
 const int RightDriverForward = 9;
 const int RightDriverBackward = 10;
 int test=0;
+const int LowerSensor1 = A0;
+const int LowerSensor2 = A1;
+const int TopSensor = A2;
+
+const int BridgeRaise = 10;
+const int BridgeLower = 11;
+
 TwoWheelDrive Driver(LeftDriverForward,LeftDriverBackward,RightDriverForward,RightDriverBackward);
+SensorController SensorControl(LowerSensor1,LowerSensor2,TopSensor);
+Motor BridgeMotor = Motor(BridgeRaise,BridgeLower);
 int index = 0;
 const int awakePin=3;
 const int sleepPin=2;
@@ -17,14 +28,13 @@ void setup() {
   pinMode(3, OUTPUT);
  digitalWrite(2,LOW); 
  digitalWrite(3,LOW); 
-
 }
 void loop() {
 
    if( Serial.available() )       // if data is available to read
   {
       val = Serial.read(); 
-  }
+  int d2 = SensorControl.GetTopDistance();
   Serial.println(val);
   digitalWrite(awakePin,LOW); 
   digitalWrite(sleepPin,LOW); 
@@ -49,7 +59,6 @@ void loop() {
       Serial.println(5);
             Driver.PivotRight();
     break;
-  }
   index++;
   delay(1000);
 }
@@ -72,10 +81,8 @@ void ToggleMusic(){
     music=1;
     Awake();
   }  
-  else{
     music=0;
     Sleep();
-  }
 }
 void Awake(){
  digitalWrite(awakePin,HIGH); 
