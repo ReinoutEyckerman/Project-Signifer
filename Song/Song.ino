@@ -27,7 +27,7 @@ void setup(){
   m.add_channel(&pin10);
   m.add_channel(&pin11);
   m.add_channel(&pin12); //LOUD PIN 
-  p3int_awake();
+  p2int_sleep();
 }
 
 void loop() {

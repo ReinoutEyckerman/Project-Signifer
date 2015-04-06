@@ -59,6 +59,8 @@ int Flat[]={0,0,1};
 int Vertical[]={1,0,0};
 int Take[]={0,0,-1};
 int Stop[]={0,1,0};
+int RStop[]={0,-1,0};
+int RVertical[]={-1,0,0};
 int Verticlap[]={0,0,2};
 int Vertispand[]={0,0,-2};
 int Horiclap[]={1,0,-2};
@@ -76,25 +78,29 @@ void CheckGestures(){
       // Serial.println("Flat");
  // SerialDebug();
  if(ByteArrayCompare(Palm, Flat, 3) )
-   Serial.println("Flat");
- else if(ByteArrayCompare(Palm, Vertical, 3))
-   Serial.println("Vertical");
+Encode("Flat");
+else if(ByteArrayCompare(Palm, Vertical, 3))
+   Encode("Vertical");
  else if(ByteArrayCompare(Palm, Take, 3) )
-      Serial.println("Take");
+      Encode("Take");
  else if(ByteArrayCompare(Palm, Stop, 3) )
-    Serial.println("Stop");
+    Encode("Stop");
 else if(ByteArrayCompare(Palm, Verticlap, 3) )
-    Serial.println("Verticlap");
+    Encode("Verticlap");
     else if(ByteArrayCompare(Palm, Vertispand, 3))
-    Serial.println("Vertispand");
+    Encode("Vertispand");
 else if(ByteArrayCompare(Palm, Horiclap, 3) )
-   Serial.println("Horiclap");
+   Encode("Horiclap");
  else if(ByteArrayCompare(Palm, Horispand, 3))
-    Serial.println("Horispand");
+    Encode("Horispand");
  else if(ByteArrayCompare(Palm, Hai, 3) )
-    Serial.println("Hai");
+    Encode("Hai");
  else if(ByteArrayCompare(Palm, Heil, 3))
-     Serial.println("Heil");
+     Encode("Heil");
+ else if(ByteArrayCompare(Palm, RVertical, 3))
+     Encode("RVertical");
+ else if(ByteArrayCompare(Palm, RStop, 3))
+   Encode("RStop");
   }
 }
 boolean ByteArrayCompare(int a[],int b[],int array_size)
@@ -112,4 +118,21 @@ void SerialDebug(){
     Serial.print(" X: "); Serial.print(temp[0]);
   Serial.print(" Y: "); Serial.print(temp[1]);
   Serial.print(" Z: "); Serial.println(temp[2]);
+}
+
+void Encode(String state){
+ //   Serial.println(state);
+  if(state== "Flat")
+      Serial.print('0');
+    else if(state== "Vertical")
+         Serial.print('5');
+  else if(state==  "Stop")
+      Serial.print('2');
+     else if(state==  "Take")
+      Serial.print('3');
+     else if(state== "RStop")
+      Serial.print('1');
+     else if(state==  "RVertical")
+      Serial.print('4');
+  
 }

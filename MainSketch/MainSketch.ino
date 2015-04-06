@@ -1,17 +1,16 @@
 #include <Motor.h>
 #include <TwoWheelDrive.h>
 
-const int LeftDriverForward = 5;
-const int LeftDriverBackward = 6;
+const int LeftDriverForward = 6;
+const int LeftDriverBackward = 5;
 const int RightDriverForward = 9;
 const int RightDriverBackward = 10;
 int test=0;
-
 TwoWheelDrive Driver(LeftDriverForward,LeftDriverBackward,RightDriverForward,RightDriverBackward);
-
 int index = 0;
 const int awakePin=3;
 const int sleepPin=2;
+char val=3;
 void setup() {
   Serial.begin(9600);
  pinMode(2, OUTPUT);
@@ -20,46 +19,63 @@ void setup() {
  digitalWrite(3,LOW); 
 
 }
-
 void loop() {
-//  for(;;){
- // if (Serial.available())
-  //  Serial.write(3);
- // }
-  digitalWrite(awakePin,LOW); 
- digitalWrite(sleepPin,LOW); 
 
-  if (index % 5 == 0) {
-    Driver.Forward();
+   if( Serial.available() )       // if data is available to read
+  {
+      val = Serial.read(); 
   }
-  else if (index % 5 == 1) {
-    Driver.PivotLeft();
-  }
-  else if (index % 5 == 2) {
-    Driver.RotateLeft();
-  }
-  else if(index %5 == 3){
-    Driver.Stop();
-  }
-  else if (index % 5 == 4){
-    Driver.RotateRight();
-  }
-  else{
-    Driver.PivotRight();
+  Serial.println(val);
+  digitalWrite(awakePin,LOW); 
+  digitalWrite(sleepPin,LOW); 
+  switch(val)
+  {
+    case '0':
+        Driver.Forward();
+    break;
+    case '1':
+        Driver.RotateLeft();
+    break;
+    case '2':
+        Driver.RotateRight();
+    break;
+    case '3':
+        Driver.Stop();
+    break;
+    case '4':
+      ToggleMusic();
+    break;
+    case '5':
+      Serial.println(5);
+            Driver.PivotRight();
+    break;
   }
   index++;
-  delay(10000);
-  if(test==0)
+  delay(1000);
+}
+const int BridgeRaise = 10;
+const int BridgeLower = 11;
+Motor BridgeMotor = Motor(BridgeRaise,BridgeLower);
+bool bridgeGoingUp = false;
+
+void ToggleBridge(){
+   if(bridgeGoingUp)
+    BridgeMotor.DriveForward(230);
+  else BridgeMotor.DriveBackward(230);
+  bridgeGoingUp = !bridgeGoingUp;
+
+  }
+int music=0;
+void ToggleMusic(){
+  if(music==0)
   {
-    test=1;
-    Serial.println("test");
+    music=1;
     Awake();
-    }
-   else{
-   test=0;
-       Serial.println("test1");
-   Sleep();
-   }
+  }  
+  else{
+    music=0;
+    Sleep();
+  }
 }
 void Awake(){
  digitalWrite(awakePin,HIGH); 
