@@ -15,14 +15,20 @@ class SensorController
 {
 public:
 	SensorController(int pinSensor1, int pinSensor2, int pinSensorTop) : _sensor1(pinSensor1), _sensor2(pinSensor2), _sensorTop(pinSensorTop){};
-	int GetCrossDistance1();
-	int GetCrossDistance2();
-	int GetCrossDistance();
+	int GetDiagDistance1();
+	int GetDiagDistance2();
+	int GetDiagDistanceMin();
+	
+	int GetDistance1();
+	int GetDistance2();
+	int GetDistanceMin();
 
 	int GetTopDistance();
 private:
 	SharpIRDistance _sensor1;
 	SharpIRDistance _sensor2;
 	SharpIRDistance _sensorTop;
+	
+	int DiagToStraight(int diagDist);
 };
 #endif
