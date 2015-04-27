@@ -1,71 +1,138 @@
 const bool debugMode = true;
 
+//const int KnuckleFlat[]= {
 //PINS
 const int pinBtn = 2;
 const int pinFlex = A0;
 const int pinTouch = A1;
-const int pinAccX = A2;
-const int pinAccY = A3;
-const int pinAccZ = A4;
+const int PalmX = A2;
+const int PalmY = A3;
+const int PalmZ = A4;
+const int KnuckleX = A5;
+const int KnuckleY = A6;
+const int KnuckleZ = A7;
+int Knuckle[] = {0,0,0};
+int Palm[] = {0,0,0};
 
-//MEASUREMENTS
-int msFlex;    //670-680 straight, 720-730 45°, 810-820 90°, Max 900
-int msTouch;   //650-660 unpressed, 900-1000 pressed on pin side, 480-490 pressed mid, near zero pressed end.
-int msAccX;    //330-340 flat, 260/400 static tilted to X side.
-int msAccY;    //330-340 flat, 260/400 static tilted to Y side.
-int msAccZ;    //330 when tilted 90°,400 when flat on board, 260 upside down.
-bool msButton; //0 when pressed, 1 when not pressed.
-
-//STATES
-volatile bool stAuto = false;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(pinBtn,INPUT_PULLUP);
-  attachInterrupt(0, buttonPress, FALLING);
 }
 
-void buttonPress(){
-  Serial.println("M"); //Mode
-  stAuto = !stAuto;
-}
 
 void loop() {
-  if(!stAuto){
     Measurements();
-    SerialCommands();
-  }
-  
-  if(debugMode){
-    SerialDebug();
-    delay(1000);
-  }
+    CheckGestures();
+    delay(100);
 }
 
 void Measurements(){
-  msButton = digitalRead(pinBtn);
-  msFlex = analogRead(pinFlex);
-  msTouch = analogRead(pinTouch);
-  msAccX = analogRead(pinAccX);
-  msAccY = analogRead(pinAccY);
-  msAccZ = analogRead(pinAccZ);
+  Palm[0] = AccelleroConverter(analogRead(PalmX), 0);
+  Palm[1] = AccelleroConverter(analogRead(PalmY), 1);
+  Palm[2] = AccelleroConverter(analogRead(PalmZ), 2);
+  Knuckle[0] = AccelleroConverter(analogRead(KnuckleX), 3);
+  Knuckle[1] = AccelleroConverter(analogRead(KnuckleY), 4);
+  Knuckle[2] = AccelleroConverter(analogRead(KnuckleZ), 5);
 }
+int AccelleroConverter(int c, int type)
+{
+   //325-340 stable, 385-410 ud, 255-285 min  240 max 430
+  if(c<240)
+    return -2;
+  else if(c<285)
+    return -1;
+  else if(c>285&&c<385)
+    return 0;
+  else if(c>385&&c<410)
+    return 1;
+  else if(c>430)
+    return 2;
+  else 
+  {
+    if(type>2)
+      return Knuckle[type-3];
+      else
+      return Palm[type];
+  }
+}
+int Flat[]={0,0,1};
+int Vertical[]={1,0,0};
+int Take[]={0,0,-1};
+int Stop[]={0,1,0};
+int RStop[]={0,-1,0};
+int RVertical[]={-1,0,0};
+int Verticlap[]={0,0,2};
+int Vertispand[]={0,0,-2};
+int Horiclap[]={1,0,-2};
+int Horispand[]={1,0,2};
+int Hai[]={1,0,2};
+int Heil[]={-2,-2,0};
+int temp[]={0,0,0};
 
+void CheckGestures(){
+  if(!ByteArrayCompare(Palm, temp, 3))
+  {
+    temp[0]=Palm[0];
+    temp[1]=Palm[1];
+    temp[2]=Palm[2];
+      // Serial.println("Flat");
+ // SerialDebug();
+ if(ByteArrayCompare(Palm, Flat, 3) )
+Encode("Flat");
+else if(ByteArrayCompare(Palm, Vertical, 3))
+   Encode("Vertical");
+ else if(ByteArrayCompare(Palm, Take, 3) )
+      Encode("Take");
+ else if(ByteArrayCompare(Palm, Stop, 3) )
+    Encode("Stop");
+else if(ByteArrayCompare(Palm, Verticlap, 3) )
+    Encode("Verticlap");
+    else if(ByteArrayCompare(Palm, Vertispand, 3))
+    Encode("Vertispand");
+else if(ByteArrayCompare(Palm, Horiclap, 3) )
+   Encode("Horiclap");
+ else if(ByteArrayCompare(Palm, Horispand, 3))
+    Encode("Horispand");
+ else if(ByteArrayCompare(Palm, Hai, 3) )
+    Encode("Hai");
+ else if(ByteArrayCompare(Palm, Heil, 3))
+     Encode("Heil");
+ else if(ByteArrayCompare(Palm, RVertical, 3))
+     Encode("RVertical");
+ else if(ByteArrayCompare(Palm, RStop, 3))
+   Encode("RStop");
+  }
+}
+boolean ByteArrayCompare(int a[],int b[],int array_size)
+{
+   for (int i = 0; i < array_size; ++i)
+     if (a[i] != b[i])
+       return(false);
+   return(true);
+}
 void SerialDebug(){
-  Serial.print("Btn: "); Serial.print(msButton);
-  Serial.print(" | Flex: "); Serial.print(msFlex);
-  Serial.print(" | Touch: "); Serial.print(msTouch);
-  Serial.print(" | X: "); Serial.print(msAccX);
-  Serial.print(" Y: "); Serial.print(msAccY);
-  Serial.print(" Z: "); Serial.println(msAccZ);
+
+  Serial.print(" X: "); Serial.print(Palm[0]);
+  Serial.print(" Y: "); Serial.print(Palm[1]);
+  Serial.print(" Z: "); Serial.println(Palm[2]);
+    Serial.print(" X: "); Serial.print(temp[0]);
+  Serial.print(" Y: "); Serial.print(temp[1]);
+  Serial.print(" Z: "); Serial.println(temp[2]);
 }
 
-void SerialCommands(){
-  if(msFlex > 700){
-    Serial.print("S");Serial.println(msFlex);} //Speed x
-    
-  if(msTouch < 400){
-    Serial.println("BL");} //Bridge Lower
-  else if(msTouch > 800){
-    Serial.println("BR");} //Bridge Raise
+void Encode(String state){
+ //   Serial.println(state);
+  if(state== "Flat")
+      Serial.print('0');
+    else if(state== "Vertical")
+         Serial.print('5');
+  else if(state==  "Stop")
+      Serial.print('2');
+     else if(state==  "Take")
+      Serial.print('3');
+     else if(state== "RStop")
+      Serial.print('1');
+     else if(state==  "RVertical")
+      Serial.print('4');
+  
 }

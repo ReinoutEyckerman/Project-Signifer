@@ -1,38 +1,74 @@
-
-
+#include <avr/sleep.h>
+#include <avr/power.h>
 #include <bassdll.h>
 #include <debug.h>
- void pt3(channel &drums, channel &bassline, channel& sky);
-  void pt2(channel &drums, channel &bassline, channel& sky);
-   void pt1(channel &drums, channel &bassline, channel& sky);
-const int CommunicatorPin=2;
+void pt3(channel &drums, channel &bassline, channel& sky);
+void pt2(channel &drums, channel &bassline, channel& sky);
+void pt1(channel &drums, channel &bassline, channel& sky);
+
 mixer m;
 note** memblk;
 channel pin12(12,1);
 channel pin11 (11,1);
 channel pin10 (10,1);
+
 void setup(){
+ 
   Serial.begin(9600);
+  //Pin Interrupthandlers
+  pinMode(2, INPUT);
+  pinMode(3, INPUT);
+  //LED for indicating if playing
+  pinMode(13, OUTPUT);
+  
+  //BASSDDLL Example Code
   memblk = (note**) calloc(290,sizeof(note*));
   if (memblk==NULL) debug(1111);
   m.add_channel(&pin10);
   m.add_channel(&pin11);
-  m.add_channel(&pin12); //LOUD PIN
-  pinMode(CommunicatorPin, INPUT);
-  
+  m.add_channel(&pin12); //LOUD PIN 
+  p2int_sleep();
 }
 
 void loop() {
 
-    {pt1(pin10,pin11,pin12);}
-    {pt2(pin12,pin11,pin10);}
-    {pt3(pin12,pin11,pin10);}
+  //BASSDLL Example Code
+  {pt1(pin10,pin11,pin12);} 
+  {pt2(pin12,pin11,pin10);}
+  {pt3(pin12,pin11,pin10);}
   
 }
 
+void p2int_sleep()
+{
+  //Prevents re-running event
+  detachInterrupt(0);
+  digitalWrite(13, LOW);
+  delay(2000);
+  sleep_enable();
+  /* Setup pin3 as an interrupt and attach handler. */
+  attachInterrupt(1, p3int_awake, HIGH);
+  //Sleeping
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  cli();
+  sei();
+  sleep_cpu();  
+  /* The program will continue from here. */
+  /* First thing to do is disable sleep. */
+}
 
+void p3int_awake(){
+  //Disables sleep  
+  sleep_disable();
+  //Detaches itself 
+  detachInterrupt(1);
+  delay(100);
+  digitalWrite(13, HIGH);
 
-
+  /* Setup pin2 as an interrupt and attach handler. */
+  attachInterrupt(0, p2int_sleep, HIGH);
+  delay(100);
+}
 
 #define EIGHTH 10
 #define KICK_LEN 9
@@ -42,7 +78,7 @@ void loop() {
 
 inline void pt3(channel &drums, channel &bassline, channel& sky)
 {
- ///OK HERES THE DRUM LOOP
+  ///OK HERES THE DRUM LOOP
   note kick;
   kick.tone = KICK;
   kick.duration = KICK_LEN;
