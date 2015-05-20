@@ -27,22 +27,26 @@ TwoWheelDrive Driver(LeftDriverForward, LeftDriverBackward, RightDriverForward, 
 Motor BridgeMotor = Motor(BridgeRaise, BridgeLower);
 SensorController SensorControl(LowerSensor1, LowerSensor2, TopSensor, myser);
 
-String val = "None";
+String val = "Auto";
 
 void setup() {
   myser.attach(Servopin);
   SensorControl.LookStraight();
   Serial.begin(9600);
   pinMode(2, OUTPUT);
+  pinMode(13, OUTPUT);
 }
 
 void loop() {
 
+  digitalWrite(13, LOW);
   if ( Serial.available() )      // if data is available to read
   {
     val = Serial.readString();
+    Serial.println(val);
+    digitalWrite(13, HIGH);
   }
-  if (val == "None")
+  if (val == "Stop")
     Driver.Stop();
   else if (val == "Auto")
     Check();
@@ -56,6 +60,7 @@ void loop() {
     Driver.Backward();
   else if (val == "Bridge")
     ToggleBridge();
+  else Driver.Stop();
   delay(200);
 }
 
@@ -70,25 +75,49 @@ void ToggleBridge() {
 void Check() {
 
   int distmin = SensorControl.GetDistanceMin();
-  Serial.println(distmin);
-  Serial.println(SensorControl.GetTopDistance());
-  if ( !WithinExtremes(SensorControl.GetTopDistance(), 20) /*&& SensorControl.GetAngle() < 48*/) {
+  int disttop = SensorControl.GetTopDistance();
+  Serial.print(distmin);
+  Serial.print(", ");
+  Serial.println(disttop);
+  Serial.print(SensorControl.GetDistance1());
+  Serial.print(", ");
+  Serial.println(SensorControl.GetDistance2());
+if (WithinExtremes(SensorControl.GetDistance1(), 20))
+    {
+      Driver.RotateRight();
+      Serial.println("TwitchRight");
+      delay(100);
+    }
+     if (WithinExtremes(SensorControl.GetDistance2(), 20)) {
+      Driver.RotateLeft();
+      Serial.println("TwitchLeft");
+      delay(100);
+    }
+  if ( !WithinExtremes(distmin, 20)) {
     Driver.Forward();
     Serial.print("Forward at angle: ");
     Serial.println(SensorControl.GetAngle());
-  } else {
-
+    
+  } 
+  else if(!WithinExtremes(disttop, 30) > !WithinExtremes(7 + distmin, 30))
+  {
+        Driver.Forward();
+    Serial.print("Forward at angle: ");
+    Serial.println(SensorControl.GetAngle());
+   
+  }
+/*  else {
     //  if (WithinExtremes(distmin, 10)) {
     Driver.Stop();
     Serial.println("Stopped");
     if (!Rotate()) {
-      while (WithinExtremes(GetLeftDistance(), 10) && WithinExtremes(GetRightDistance(), 10) /* && BACKDISTANCE > 6 */) {
-        Driver.Backward();
+      while (WithinExtremes(GetLeftDistance(), 15) && WithinExtremes(GetRightDistance(), 15) /* && BACKDISTANCE > 6 ) {
+   /*     Driver.Backward();
         Serial.println("Reverse");
         delay(1000);
       }
 
-      if (!WithinExtremes(GetLeftDistance(), 10))
+      if (!WithinExtremes(GetLeftDistance(), 15))
       {
         Driver.RotateLeft();
         delay(2000);
@@ -98,25 +127,17 @@ void Check() {
         Driver.RotateRight();
         delay(2000);
         Serial.println("BackRight");
-        //    }
       }
     }
-  }
+  }*/
 }
 
 
+
 bool Rotate() {
-  /*if (!WithinExtremes(SensorControl.GetDistance1(), 5))
-  {
-    Driver.RotateRight();
-    delay(100);
-  }
-  else if (!WithinExtremes(SensorControl.GetDistance2(), 5)) {
-    Driver.RotateLeft();
-    delay(100);
-  }*/
+
   if (left) {
-    if (!WithinExtremes(GetRightDistance(), 10))
+    if (!WithinExtremes(GetRightDistance(), 15))
     {
       left = false;
       Driver.RotateRight();
@@ -124,7 +145,7 @@ bool Rotate() {
       Serial.println("Right");
       return true;
     }
-    else if (!WithinExtremes(GetLeftDistance(), 10)) {
+    else if (!WithinExtremes(GetLeftDistance(), 15)) {
       left = true;
       Driver.RotateLeft();
       delay(750);
@@ -133,7 +154,7 @@ bool Rotate() {
     }
   }
   else {
-    if (!WithinExtremes(GetLeftDistance(), 10))
+    if (!WithinExtremes(GetLeftDistance(), 15))
     {
       left = true;
       Driver.RotateLeft();
@@ -141,7 +162,7 @@ bool Rotate() {
       Serial.println("Left");
       return true;
     }
-    else if (!WithinExtremes(GetRightDistance(), 10)) {
+    else if (!WithinExtremes(GetRightDistance(), 15)) {
       left = false;
       Driver.RotateRight();
       delay(750);

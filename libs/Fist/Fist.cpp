@@ -2,32 +2,31 @@
 #include "Fist.h"
 
 const int pinBtn = 2;
-const int pinFlex = A0;
-const int pinTouch = A1;
-const int PalmX = A2;
-const int PalmY = A3;
-const int PalmZ = A4;
-const int KnuckleX = A5;
-const int KnuckleY = A6;
-const int KnuckleZ = A7;
-const int Flat[]={0,0,1};
-const int Vertical[]={1,0,0};
-const int Take[]={0,0,-1};
-const int Stop[]={0,1,0};
-const int RStop[]={0,-1,0};
-const int RVertical[]={-1,0,0};
-const int Verticlap[]={0,0,2};
-const int Vertispand[]={0,0,-2};
-const int Horiclap[]={1,0,-2};
-const int Horispand[]={1,0,2};
-const int Hai[]={1,0,2};
-const int Heil[]={-2,-2,0};
+const int PalmX = A0;
+const int PalmY = A1;
+const int PalmZ = A2;
+const int KnuckleX = A3;
+const int KnuckleY = A4;
+const int KnuckleZ = A5;
+int Flat[]={0,0,1,0,0,0};
+int Vertical[]={1,0,0,0,0,0};
+int Take[]={0,0,-1,0,0,0};
+int Stop[]={0,1,0,0,0,0};
+int RStop[]={0,-1,0,0,0,0};
+int RVertical[]={-1,0,0,0,0,0};
+int Verticlap[]={0,0,2,0,0,0};
+int Vertispand[]={0,0,-2,0,0,0};
+int Horiclap[]={1,0,-2,0,0,0};
+int Horispand[]={1,0,2,0,0,0};
+int Hai[]={1,0,2,0,0,0};
+int Heil[]={-2,-2,0,0,0,0};
 int temp[]={0,0,0,0,0,0};
 int current[]={0,0,0,0,0,0};
 
 void Fist::Run(){
 	Measurements();
-	CheckGestures();
+//CheckGestures();
+	
 }
 void Fist::Measurements(){
   current[0] = AccelleroConverter(analogRead(PalmX));

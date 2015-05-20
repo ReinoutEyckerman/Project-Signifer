@@ -3,14 +3,14 @@ const bool debugMode = true;
 //const int KnuckleFlat[]= {
 //PINS
 const int pinBtn = 2;
-const int pinFlex = A0;
-const int pinTouch = A1;
+const int pinFlex = A8;
+const int pinTouch = A9;
 const int PalmX = A2;
-const int PalmY = A3;
-const int PalmZ = A4;
-const int KnuckleX = A5;
-const int KnuckleY = A6;
-const int KnuckleZ = A7;
+const int PalmY = A1;
+const int PalmZ = A0;
+const int KnuckleX = A3;
+const int KnuckleY = A4;
+const int KnuckleZ = A5  ;
 int Knuckle[] = {0,0,0};
 int Palm[] = {0,0,0};
 
@@ -21,6 +21,7 @@ void setup() {
 
 
 void loop() {
+ // Serial.println("X");
     Measurements();
     CheckGestures();
     delay(100);
@@ -56,7 +57,7 @@ int AccelleroConverter(int c, int type)
   }
 }
 int Flat[]={0,0,1};
-int Vertical[]={1,0,0};
+int Vertical[]={0,0,-1};
 int Take[]={0,0,-1};
 int Stop[]={0,1,0};
 int RStop[]={0,-1,0};
@@ -76,7 +77,7 @@ void CheckGestures(){
     temp[1]=Palm[1];
     temp[2]=Palm[2];
       // Serial.println("Flat");
- // SerialDebug();
+  SerialDebug();
  if(ByteArrayCompare(Palm, Flat, 3) )
 Encode("Flat");
 else if(ByteArrayCompare(Palm, Vertical, 3))
