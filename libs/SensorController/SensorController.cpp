@@ -8,11 +8,6 @@ This code released into public domain.
 #include "Arduino.h"
 #include "SensorController.h"
 #include "Servo.h"
-
-/*SensorController::SensorController(int pinSensor1, int pinSensor2, int pinSensorTop, int pinServo): _sensor1(pinSensor1), _sensor2(pinSensor2), _sensorTop(pinSensorTop){
-
- myservo.attach(pinServo);
-}*/
 		 
 int SensorController::GetDiagDistance1(){
 	return _sensor1.getDistance();
@@ -36,7 +31,7 @@ int SensorController::GetDistance1(){
 
 int SensorController::GetDistance2(){
 	return DiagToStraight(GetDiagDistance2());	
-}
+    }
 
 int SensorController::GetDistanceMin(){
 	return DiagToStraight(GetDiagDistanceMin());	
@@ -66,16 +61,29 @@ void SensorController::LookRight(){
 }}
 void SensorController::LookStraight()
 {
-  if(pos>90)
-  for(pos; pos >= 90; pos--)  // goes from 0 degrees to 180 degrees 
-  {                                  // in steps of 1 degree 
-   _myservo.write(pos);              // tell servo to go to position in variable 'pos' 
-    delay(15);                       // waits 15ms for the servo to reach the position 
-  } 
-  else{
-   for(pos; pos<=90; pos++)
-   { _myservo.write(pos);
-    delay(10);
-  }}
+	TurnServo(90);
+}
 
+void SensorController::TurnServo(int degrees){
+	if(pos>degrees)
+	{
+		for(pos; pos >= degrees; pos--)  // goes from 0 degrees to 180 degrees 
+		{                                  // in steps of 1 degree 
+			_myservo.write(pos);              // tell servo to go to position in variable 'pos' 
+			delay(15);                       // waits 15ms for the servo to reach the position 
+		} 	
+	}	
+  else
+  {
+		for(pos; pos <= degrees; pos++)
+		{
+			_myservo.write(pos);
+			delay(15);
+		}
+	}
+	}
+
+int SensorController::GetTopAtAngle(int degrees){
+		TurnServo(degrees);
+		return GetTopDistance();
 }

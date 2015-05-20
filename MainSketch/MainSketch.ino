@@ -5,10 +5,10 @@
 #include <SensorController.h>
 #include <Arduino.h>
 
-const int LeftDriverForward = 5;
-const int LeftDriverBackward = 6;
-const int RightDriverForward = 10;
-const int RightDriverBackward = 9;
+const int LeftDriverForward = 10;
+const int LeftDriverBackward = 9;
+const int RightDriverForward = 5;
+const int RightDriverBackward = 6;
 
 const int LowerSensor1 = A0;
 const int LowerSensor2 = A1;
@@ -20,7 +20,6 @@ const int BridgeLower = 11;
 
 Servo myser;
 
-bool left;
 bool bridgeGoingUp = false;
 
 TwoWheelDrive Driver(LeftDriverForward, LeftDriverBackward, RightDriverForward, RightDriverBackward);
@@ -28,6 +27,18 @@ Motor BridgeMotor = Motor(BridgeRaise, BridgeLower);
 SensorController SensorControl(LowerSensor1, LowerSensor2, TopSensor, myser);
 
 String val = "Auto";
+
+//Keep track of every turn we have made so far, right is positive, left is negative. 
+int deflection = 0;
+
+int distRightDiag = 0;
+int distLeftDiag = 0;
+int distBottom = 0;
+int distTop = 0;
+
+const int SHOULDREACT = 14;
+const int DANGERCLOSE = 7;
+const int BRIDGEDIFF = 8;
 
 void setup() {
   myser.attach(Servopin);
@@ -73,22 +84,42 @@ void ToggleBridge() {
 }
 
 void Check() {
-
-  int distmin = SensorControl.GetDistanceMin();
-  int disttop = SensorControl.GetTopDistance();
-  Serial.print(distmin);
-  Serial.print(", ");
-  Serial.println(disttop);
-  Serial.print(SensorControl.GetDistance1());
-  Serial.print(", ");
-  Serial.println(SensorControl.GetDistance2());
-if (WithinExtremes(SensorControl.GetDistance1(), 20))
+  Measurements();  
+  
+  //Closer than SHOUDLREACT?
+  if(distBottom < SHOULDREACT){
+    
+    //Is it a bridge?
+    if(CheckIsBridge()){
+      //Serial.println("Bridge!");
+      
+      StraightenPerpendicular();
+      //Serial.println("Straightened, so forward.");
+      
+      Driver.Forward();
+      return;
+    }
+    
+    //No Bridge, just obstacle.
+    else{
+      //Serial.println("Obstacle!");
+      Driver.Stop();
+      return;
+    }
+    
+  }
+  else{
+    //Serial.println("NOTHING");
+    Driver.Forward();
+  }
+  
+/*if (WithinExtremes(SensorControl.GetDistance1(), 15))
     {
       Driver.RotateRight();
       Serial.println("TwitchRight");
       delay(100);
     }
-     if (WithinExtremes(SensorControl.GetDistance2(), 20)) {
+     if (WithinExtremes(SensorControl.GetDistance2(), 15)) {
       Driver.RotateLeft();
       Serial.println("TwitchLeft");
       delay(100);
@@ -106,7 +137,7 @@ if (WithinExtremes(SensorControl.GetDistance1(), 20))
     Serial.println(SensorControl.GetAngle());
    
   }
-/*  else {
+ else {
     //  if (WithinExtremes(distmin, 10)) {
     Driver.Stop();
     Serial.println("Stopped");
@@ -133,7 +164,7 @@ if (WithinExtremes(SensorControl.GetDistance1(), 20))
 }
 
 
-
+/*
 bool Rotate() {
 
   if (left) {
@@ -171,7 +202,7 @@ bool Rotate() {
     }
   }
   return false;
-}
+}*/
 
 int GetLeftDistance() {
   SensorControl.LookLeft();
@@ -190,8 +221,54 @@ int GetRightDistance() {
 
 }
 
-bool WithinExtremes(int value, int extreme) {
-  if (value > 0 && value <= extreme)
-    return true;
-  return false;
+void Measurements(){
+  distBottom = SensorControl.GetDistanceMin();
+  distLeftDiag = SensorControl.GetDiagDistance1();
+  distRightDiag = SensorControl.GetDiagDistance2();
+  distTop = SensorControl.GetTopDistance();
+  
+  /*
+    Serial.print("LEFT: ");
+    Serial.print(distLeftDiag);
+    Serial.print(" | RIGHT: ");
+    Serial.print(distRightDiag);
+    Serial.print(" | TOP: ");
+    Serial.println(distTop);
+   */
 }
+
+bool CheckIsBridge(){
+  SensorControl.LookStraight();
+  Measurements();
+  
+  if( distTop > distBottom + BRIDGEDIFF )
+    return true;
+  else return false;
+}
+
+//Sraighten the robot so it's perpendicular to a wall or a bridge.
+void StraightenPerpendicular(){
+  const int TOLERANCECM = 2;
+  
+  while(true){
+    Measurements();
+  
+    if(distLeftDiag + TOLERANCECM >= distRightDiag && distLeftDiag - TOLERANCECM <= distRightDiag){
+      return;
+    }
+    else{
+      if(distLeftDiag > distRightDiag){
+        Driver.RotateLeft();
+        Serial.println("Straightening LEFT");
+        delay(100);
+      }
+      else{
+        Driver.RotateRight();
+        Serial.println("Straightening RIGHT");
+        delay(100);
+      }
+  }
+  
+  }  
+}
+  
