@@ -27,14 +27,19 @@ Motor BridgeMotor = Motor(BridgeRaise, BridgeLower);
 SensorController SensorControl(LowerSensor1, LowerSensor2, TopSensor, myser);
 
 String val = "Auto";
+bool left = false;
 
-//Keep track of every turn we have made so far, right is positive, left is negative. 
+//Keep track of every turn we have made so far, right is positive, left is negative.
 int deflection = 0;
 
+int distRight = 0;
+int distLeft = 0;
 int distRightDiag = 0;
 int distLeftDiag = 0;
 int distBottom = 0;
 int distTop = 0;
+int distAt0 = 0;
+int distAt180 = 0;
 
 const int SHOULDREACT = 14;
 const int DANGERCLOSE = 7;
@@ -84,149 +89,40 @@ void ToggleBridge() {
 }
 
 void Check() {
-  Measurements();  
-  
+  Measurements();
+
   //Closer than SHOUDLREACT?
-  if(distBottom < SHOULDREACT){
-    
+  if (distBottom < SHOULDREACT) {
+
     //Is it a bridge?
-    if(CheckIsBridge()){
+    if (CheckIsBridge()) {
       //Serial.println("Bridge!");
-      
+
       StraightenPerpendicular();
       //Serial.println("Straightened, so forward.");
-      
+
       Driver.Forward();
       return;
     }
-    
+
     //No Bridge, just obstacle.
-    else{
+    else {
       //Serial.println("Obstacle!");
-      Driver.Stop();
-      return;
-    }
-    
-  }
-  else{
-    //Serial.println("NOTHING");
-    Driver.Forward();
-  }
-  
-/*if (WithinExtremes(SensorControl.GetDistance1(), 15))
-    {
-      Driver.RotateRight();
-      Serial.println("TwitchRight");
-      delay(100);
-    }
-     if (WithinExtremes(SensorControl.GetDistance2(), 15)) {
-      Driver.RotateLeft();
-      Serial.println("TwitchLeft");
-      delay(100);
-    }
-  if ( !WithinExtremes(distmin, 20)) {
-    Driver.Forward();
-    Serial.print("Forward at angle: ");
-    Serial.println(SensorControl.GetAngle());
-    
-  } 
-  else if(!WithinExtremes(disttop, 30) > !WithinExtremes(7 + distmin, 30))
-  {
-        Driver.Forward();
-    Serial.print("Forward at angle: ");
-    Serial.println(SensorControl.GetAngle());
-   
-  }
- else {
-    //  if (WithinExtremes(distmin, 10)) {
-    Driver.Stop();
-    Serial.println("Stopped");
-    if (!Rotate()) {
-      while (WithinExtremes(GetLeftDistance(), 15) && WithinExtremes(GetRightDistance(), 15) /* && BACKDISTANCE > 6 ) {
-   /*     Driver.Backward();
-        Serial.println("Reverse");
-        delay(1000);
-      }
 
-      if (!WithinExtremes(GetLeftDistance(), 15))
-      {
-        Driver.RotateLeft();
-        delay(2000);
-        Serial.println("BackLeft");
-      }
-      else {
-        Driver.RotateRight();
-        delay(2000);
-        Serial.println("BackRight");
-      }
-    }
-  }*/
-}
-
-
-/*
-bool Rotate() {
-
-  if (left) {
-    if (!WithinExtremes(GetRightDistance(), 15))
-    {
-      left = false;
-      Driver.RotateRight();
-      delay(750);
-      Serial.println("Right");
-      return true;
-    }
-    else if (!WithinExtremes(GetLeftDistance(), 15)) {
-      left = true;
-      Driver.RotateLeft();
-      delay(750);
-      Serial.println("Left");
-      return true;
+      RotateForObstacle();
     }
   }
   else {
-    if (!WithinExtremes(GetLeftDistance(), 15))
-    {
-      left = true;
-      Driver.RotateLeft();
-      delay(750);
-      Serial.println("Left");
-      return true;
-    }
-    else if (!WithinExtremes(GetRightDistance(), 15)) {
-      left = false;
-      Driver.RotateRight();
-      delay(750);
-      Serial.println("Right");
-      return true;
-    }
+    Driver.Forward();
   }
-  return false;
-}*/
-
-int GetLeftDistance() {
-  SensorControl.LookLeft();
-  Serial.print("LookyLeft: ");
-  Serial.println(SensorControl.GetTopDistance());
-  SensorControl.LookStraight();
-  return SensorControl.GetTopDistance();
 }
 
-int GetRightDistance() {
-  SensorControl.LookRight();
-  Serial.print("LookyRight: ");
-  Serial.println(SensorControl.GetTopDistance());
-  SensorControl.LookStraight();
-  return SensorControl.GetTopDistance();
-
-}
-
-void Measurements(){
+void Measurements() {
   distBottom = SensorControl.GetDistanceMin();
-  distLeftDiag = SensorControl.GetDiagDistance1();
-  distRightDiag = SensorControl.GetDiagDistance2();
+  distLeft = SensorControl.GetDistance1();
+  distRight = SensorControl.GetDistance2();
   distTop = SensorControl.GetTopDistance();
-  
+
   /*
     Serial.print("LEFT: ");
     Serial.print(distLeftDiag);
@@ -237,38 +133,82 @@ void Measurements(){
    */
 }
 
-bool CheckIsBridge(){
+void SideMeasurements() {
+  distAt0 = SensorControl.GetTopAtAngle(0);
+  distAt180 = SensorControl.GetTopAtAngle(180);
+  SensorControl.LookStraight();
+}
+
+bool CheckIsBridge() {
   SensorControl.LookStraight();
   Measurements();
-  
-  if( distTop > distBottom + BRIDGEDIFF )
+
+  if ( distTop > distBottom + BRIDGEDIFF )
     return true;
   else return false;
 }
 
 //Sraighten the robot so it's perpendicular to a wall or a bridge.
-void StraightenPerpendicular(){
+void StraightenPerpendicular() {
   const int TOLERANCECM = 2;
-  
-  while(true){
+
+  while (true) {
     Measurements();
-  
-    if(distLeftDiag + TOLERANCECM >= distRightDiag && distLeftDiag - TOLERANCECM <= distRightDiag){
+
+    if (distLeft + TOLERANCECM >= distRight && distLeft - TOLERANCECM <= distRight) {
       return;
     }
-    else{
-      if(distLeftDiag > distRightDiag){
+    else {
+      if (distLeft > distRight) {
         Driver.RotateLeft();
         Serial.println("Straightening LEFT");
         delay(100);
       }
-      else{
+      else {
         Driver.RotateRight();
         Serial.println("Straightening RIGHT");
         delay(100);
       }
+    }
+
   }
-  
-  }  
 }
-  
+
+void RotateForObstacle() {
+  while (distBottom < SHOULDREACT) {
+    Driver.Stop();
+    SideMeasurements();
+
+    if (distAt0 < DANGERCLOSE && distAt180 < DANGERCLOSE) {
+      Serial.println("LOCKDOWN");
+      while (true) {};
+    }
+    //NO SPACE ON LEFT, but space on right.
+    else if (distAt0 < DANGERCLOSE && distAt180 > DANGERCLOSE) {
+      Driver.RotateRight();
+      deflection += 1;
+      delay(500);
+    }
+    //NO SPACE ON RIGHT but space on left.
+    else if (distAt180 < DANGERCLOSE && distAt0 > DANGERCLOSE) {
+      Driver.RotateLeft();
+      deflection -= 1;
+      delay(500);
+    }
+    //More space on Right than on left.
+    else if (distAt180 > distAt0) {
+      Driver.RotateRight();
+      deflection += 1;
+      delay(500);
+    }
+    else if (distAt0 > distAt180) {
+      Driver.RotateLeft();
+      deflection -= 1;
+      delay(500);
+    }
+
+    //Re-check for forward space.
+    Measurements();
+  }
+}
+
