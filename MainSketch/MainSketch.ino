@@ -5,6 +5,9 @@
 #include <SensorController.h>
 #include <Arduino.h>
 
+/***************
+ *  PINS
+ ***************/
 const int LeftDriverForward = 10;
 const int LeftDriverBackward = 9;
 const int RightDriverForward = 5;
@@ -18,32 +21,42 @@ const int Servopin = 2;
 const int BridgeRaise = 10;
 const int BridgeLower = 11;
 
+/***************
+ *  OBJECTS
+ ***************/
 Servo myser;
-
-bool bridgeGoingUp = false;
-
 TwoWheelDrive Driver(LeftDriverForward, LeftDriverBackward, RightDriverForward, RightDriverBackward);
 Motor BridgeMotor = Motor(BridgeRaise, BridgeLower);
 SensorController SensorControl(LowerSensor1, LowerSensor2, TopSensor, myser);
 
-String val = "Auto";
-bool left = false;
-
-//Keep track of every turn we have made so far, right is positive, left is negative.
-int deflection = 0;
-
-int distRight = 0;
-int distLeft = 0;
-int distRightDiag = 0;
-int distLeftDiag = 0;
-int distBottom = 0;
-int distTop = 0;
-int distAt0 = 0;
-int distAt180 = 0;
+/**************
+ *  SETTINGS
+ **************/
 
 const int SHOULDREACT = 14;
 const int DANGERCLOSE = 7;
 const int BRIDGEDIFF = 8;
+
+/*************
+ *  GLOBALS
+ *************/
+
+bool bridgeGoingUp = false;
+String val = "Auto";
+
+int deflection = 0;       // Keep track of every turn made. in 100ms steps. positive is right, negative is left.
+int localDeflection = 0;  // Local deflection so we can commit to 1 direction, instead of twitching.
+
+int distRight = 0;        //BOTTOM RIGHT CALC
+int distLeft = 0;         //BOTTOM LEFT CALC
+int distBottom = 0;       //BOTTOM SHORTEST
+int distTop = 0;          //TOP DISTANCE
+int distAt0 = 0;          //TOP DISTANCE LEFT SIDE
+int distAt180 = 0;        //TOP DISTANCE RIGHT SIDE
+
+/*******************
+ *  SETUP & LOOP
+ *******************/
 
 void setup() {
   myser.attach(Servopin);
@@ -65,7 +78,7 @@ void loop() {
   if (val == "Stop")
     Driver.Stop();
   else if (val == "Auto")
-    Check();
+    AutonomousMove();
   else if (val == "Forward")
     Driver.Forward();
   else if (val == "Left")
@@ -80,40 +93,117 @@ void loop() {
   delay(200);
 }
 
-void ToggleBridge() {
-  if (bridgeGoingUp)
-    BridgeMotor.DriveForward(230);
-  else BridgeMotor.DriveBackward(230);
-  bridgeGoingUp = !bridgeGoingUp;
+/***********************
+ *  MOVEMENT ALGORITHM
+ ***********************/
 
-}
-
-void Check() {
+void AutonomousMove() {
   Measurements();
 
-  //Closer than SHOUDLREACT?
+  // Closer than SHOUDLREACT?
   if (distBottom < SHOULDREACT) {
 
-    //Is it a bridge?
+    // In case of bridge
     if (CheckIsBridge()) {
-      //Serial.println("Bridge!");
-
       StraightenPerpendicular();
-      //Serial.println("Straightened, so forward.");
-
       Driver.Forward();
       return;
     }
 
-    //No Bridge, just obstacle.
+    //No Bridge, so obstacle
     else {
-      //Serial.println("Obstacle!");
-
-      RotateForObstacle();
+      AvoidObstacle();
     }
   }
+  
+  //Farther than SHOULDREACT
   else {
     Driver.Forward();
+  }
+}
+
+
+//Greedy recursive obstacle avoidance algorithm by Oliver
+void AvoidObstacle() {
+  
+  localDeflection = 0; // Reset local deflection, so we can commit to a certain direction.
+  
+  // While the obstacle is in front of us.
+  while (distBottom < SHOULDREACT) {
+    Driver.Stop();
+    SideMeasurements();
+
+    // Walls very close on both sides.
+    if (distAt0 < DANGERCLOSE && distAt180 < DANGERCLOSE) {
+      Serial.println("LOCKDOWN");
+      Driver.Backward();
+      delay(500);
+    }
+    
+    // No space on left side, but space on right side.
+    else if (distAt0 < DANGERCLOSE && distAt180 > DANGERCLOSE) {
+      GoRight(5);
+    }
+    
+    // No space on right side, but space on left side.
+    else if (distAt180 < DANGERCLOSE && distAt0 > DANGERCLOSE) {
+      GoLeft(5);
+    }
+    
+    // More space on right side than on left side.
+    else if (distAt180 > distAt0) {
+      
+      // We've been going right already, so continue.
+      if(localDeflection > 0){
+        GoRight(5);
+      }
+      
+      // Overall, we've made more left turns already, so chances are we need to go right now.
+      else if(deflection < 0){
+        GoRight(5);
+      }
+    }
+    
+    // More space on left side than on right side.
+    else if (distAt0 > distAt180) {
+      
+      // We've been going left already, so continue.
+      if(localDeflection < 0){
+        GoLeft(5);
+      }
+      
+      // Overall, we've made more right turns already, so chances are we need to go left now.
+      else if(deflection > 0){
+        GoLeft(5);
+      }
+    }
+    
+    // Both sides have the same amount of space. 
+    else{
+      
+      // We've been going left already, so continue.
+      if(localDeflection < 0){
+          GoLeft(5);
+      }
+      
+      // We've been going right already, so continue. 
+      else if (localDeflection > 0){
+        GoRight(5);
+      }
+      
+      //Overall more left turns made, or completely equal, so we guess for a right turn now.
+      else if(deflection <= 0){
+        GoRight(5);
+      }
+      
+      //Overall more right turns made, so we guess for a left turn now.
+      else if(deflection > 0){
+        GoLeft(5);
+      }
+    }
+
+    //Re-check for forward space.
+    Measurements();
   }
 }
 
@@ -160,55 +250,40 @@ void StraightenPerpendicular() {
     }
     else {
       if (distLeft > distRight) {
-        Driver.RotateLeft();
-        Serial.println("Straightening LEFT");
-        delay(100);
+        GoLeft(1);
       }
       else {
-        Driver.RotateRight();
-        Serial.println("Straightening RIGHT");
-        delay(100);
+        GoRight(1);
       }
     }
 
   }
 }
 
-void RotateForObstacle() {
-  while (distBottom < SHOULDREACT) {
-    Driver.Stop();
-    SideMeasurements();
+void GoRight(int steps) {
+  Driver.RotateRight();
+  delay(100 * steps);
 
-    if (distAt0 < DANGERCLOSE && distAt180 < DANGERCLOSE) {
-      Serial.println("LOCKDOWN");
-      while (true) {};
-    }
-    //NO SPACE ON LEFT, but space on right.
-    else if (distAt0 < DANGERCLOSE && distAt180 > DANGERCLOSE) {
-      Driver.RotateRight();
-      deflection += 1;
-      delay(500);
-    }
-    //NO SPACE ON RIGHT but space on left.
-    else if (distAt180 < DANGERCLOSE && distAt0 > DANGERCLOSE) {
-      Driver.RotateLeft();
-      deflection -= 1;
-      delay(500);
-    }
-    //More space on Right than on left.
-    else if (distAt180 > distAt0) {
-      Driver.RotateRight();
-      deflection += 1;
-      delay(500);
-    }
-    else if (distAt0 > distAt180) {
-      Driver.RotateLeft();
-      deflection -= 1;
-      delay(500);
-    }
+  deflection += steps;
+  localDeflection += steps;
+}
 
-    //Re-check for forward space.
-    Measurements();
-  }
+void GoLeft(int steps) {
+  Driver.RotateLeft();
+  delay(100 * steps);
+
+  deflection -= steps;
+  localDeflection -= steps;
+}
+
+/**********************
+ * VARIOUS FUNCTIONS
+ **********************/
+
+void ToggleBridge() {
+  if (bridgeGoingUp)
+    BridgeMotor.DriveForward(230);
+  else BridgeMotor.DriveBackward(230);
+  bridgeGoingUp = !bridgeGoingUp;
 }
 
