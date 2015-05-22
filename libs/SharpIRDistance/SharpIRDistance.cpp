@@ -19,11 +19,12 @@ int SharpIRDistance::getDistance()
   int analogDistance = analogRead(_pin);
   int distanceCentimeters = 1/(0.0004*analogDistance-0.0081);
   
-  return distanceCentimeters;
+  return Filter(distanceCentimeters);
 }
 
-//Indien laatste meting kleiner is dan gegeven parameter, return true.
-bool SharpIRDistance::isCloser(int dist)
-{
-	return (getDistance() < dist);
-}
+int SharpIRDistance::Filter(int distance){
+		if(distance > 30 || distance < 0){
+			return 30;
+			}
+		else return distance;
+	}

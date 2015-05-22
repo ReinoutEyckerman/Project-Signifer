@@ -28,6 +28,7 @@ public:
 	void LookLeft();
 	void LookStraight();
 	int GetTopDistance();
+	int GetTopAtAngle(int degrees);
 private:
 	int pos;
         SharpIRDistance _sensor1;
@@ -35,5 +36,6 @@ private:
 	SharpIRDistance _sensorTop;
         Servo _myservo;	
 	int DiagToStraight(int diagDist);
+	void TurnServo(int degrees);
 };
 #endif

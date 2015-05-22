@@ -18,5 +18,6 @@ class SharpIRDistance
     bool isCloser(int dist);
   private:
     int _pin;
+    int Filter(int distance);
 };
 #endif
