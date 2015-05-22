@@ -27,7 +27,7 @@ TwoWheelDrive Driver(LeftDriverForward, LeftDriverBackward, RightDriverForward, 
 Motor BridgeMotor = Motor(BridgeRaise, BridgeLower);
 SensorController SensorControl(LowerSensor1, LowerSensor2, TopSensor, myser);
 
-String val = "Auto";
+String val = "Forward";
 
 void setup() {
   myser.attach(Servopin);
@@ -44,7 +44,6 @@ void loop() {
   {
     val = Serial.readString();
     Serial.println(val);
-    digitalWrite(13, HIGH);
   }
   if (val == "Stop")
     Driver.Stop();
