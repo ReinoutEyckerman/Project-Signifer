@@ -159,8 +159,12 @@ void AvoidObstacle() {
       }
       
       // Overall, we've made more left turns already, so chances are we need to go right now.
-      else if(deflection < 0){
+      else if(deflection <= 0){
         GoRight(5);
+      }
+      
+      else{
+        GoRight(3);
       }
     }
     
@@ -173,8 +177,12 @@ void AvoidObstacle() {
       }
       
       // Overall, we've made more right turns already, so chances are we need to go left now.
-      else if(deflection > 0){
+      else if(deflection >= 0){
         GoLeft(5);
+      }
+      
+      else {
+        GoLeft(3);
       }
     }
     
@@ -213,14 +221,14 @@ void Measurements() {
   distRight = SensorControl.GetDistance2();
   distTop = SensorControl.GetTopDistance();
 
-  /*
+ 
     Serial.print("LEFT: ");
-    Serial.print(distLeftDiag);
+    Serial.print(distLeft);
     Serial.print(" | RIGHT: ");
-    Serial.print(distRightDiag);
+    Serial.print(distRight);
     Serial.print(" | TOP: ");
     Serial.println(distTop);
-   */
+   
 }
 
 void SideMeasurements() {
