@@ -32,7 +32,7 @@ SensorController SensorControl(LowerSensor1, LowerSensor2, TopSensor, myser);
 /**************
  *  SETTINGS
  **************/
- String val = "Auto";
+ String val = "Stop";
 
 const int SHOULDREACT = 14;
 const int DANGERCLOSE = 7;
@@ -52,6 +52,8 @@ int distLeft = 0;         //BOTTOM LEFT CALC
 int distBottom = 0;       //BOTTOM SHORTEST
 int distTop = 0;          //TOP DISTANCE
 int distAt0 = 0;          //TOP DISTANCE LEFT SIDE
+int distAt45 = 0;         //TOP DSISTANCE LEFT 45
+int distAt135 = 0;        //TOP DISTANCE RIGHT 45
 int distAt180 = 0;        //TOP DISTANCE RIGHT SIDE
 
 /*******************
@@ -126,6 +128,7 @@ void AutonomousMove() {
 void AvoidObstacle() {
   
   localDeflection = 0; // Reset local deflection, so we can commit to a certain direction.
+  Serial.println("Reset preference");
   
   // While the obstacle is in front of us.
   while (distBottom < SHOULDREACT) {
@@ -140,48 +143,56 @@ void AvoidObstacle() {
     }
     
     // No space on left side, but space on right side.
-    else if (distAt0 < DANGERCLOSE && distAt180 > DANGERCLOSE) {
+    else if ((distAt0 < DANGERCLOSE || distAt45 < DANGERCLOSE) && distAt180 > DANGERCLOSE) {
       GoRight(5);
+      Serial.println("DANGER LEFT");
     }
     
     // No space on right side, but space on left side.
-    else if (distAt180 < DANGERCLOSE && distAt0 > DANGERCLOSE) {
+    else if ((distAt180 < DANGERCLOSE || distAt135 < DANGERCLOSE) && distAt0 > DANGERCLOSE) {
       GoLeft(5);
+      Serial.println("DANGER RIGHT");
     }
     
     // More space on right side than on left side.
-    else if (distAt180 > distAt0) {
+    else if (distAt180 > distAt0 || distAt180 > distAt45) {
       
       // We've been going right already, so continue.
       if(localDeflection > 0){
         GoRight(5);
+        Serial.println("Continue right");
       }
       
       // Overall, we've made more left turns already, so chances are we need to go right now.
       else if(deflection <= 0){
         GoRight(5);
+        Serial.println("Guess right");
       }
       
       else{
         GoRight(3);
+        Serial.println("Right just because");
       }
     }
     
     // More space on left side than on right side.
-    else if (distAt0 > distAt180) {
+    else if (distAt0 > distAt180 || distAt0 > distAt135) {
       
       // We've been going left already, so continue.
       if(localDeflection < 0){
         GoLeft(5);
+        Serial.println("Continue left");
       }
       
       // Overall, we've made more right turns already, so chances are we need to go left now.
       else if(deflection >= 0){
         GoLeft(5);
+        Serial.println("Guess left");
       }
       
       else {
         GoLeft(3);
+        Serial.println("Left just because");
       }
     }
     
@@ -191,21 +202,25 @@ void AvoidObstacle() {
       // We've been going left already, so continue.
       if(localDeflection < 0){
           GoLeft(5);
+          Serial.println("Continue Left");
       }
       
       // We've been going right already, so continue. 
       else if (localDeflection > 0){
         GoRight(5);
+        Serial.println("Continue Right");
       }
       
       //Overall more left turns made, or completely equal, so we guess for a right turn now.
       else if(deflection <= 0){
         GoRight(5);
+        Serial.println("Guess Right");
       }
       
       //Overall more right turns made, so we guess for a left turn now.
       else if(deflection > 0){
         GoLeft(5);
+        Serial.println("Guess Left");
       }
     }
 
@@ -232,6 +247,8 @@ void Measurements() {
 
 void SideMeasurements() {
   distAt0 = SensorControl.GetTopAtAngle(0);
+  distAt45 = SensorControl.GetTopAtAngle(45);
+  distAt135 = SensorControl.GetTopAtAngle(135);
   distAt180 = SensorControl.GetTopAtAngle(180);
   SensorControl.LookStraight();
 }
