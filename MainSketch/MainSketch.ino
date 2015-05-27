@@ -82,10 +82,17 @@ void loop() {
     AutonomousMove();
   else if (val == "Forward")
     Driver.Forward();
-  else if (val == "Left")
+  else if (val == "Left"){
     Driver.RotateLeft();
-  else if (val == "Right")
+    delay(300);
+    val="Stop";
+  }
+  else if (val == "Right"){
     Driver.RotateRight();
+    delay(300);
+    val="Stop";
+  }
+    
   else if (val == "Back")
     Driver.Backward();
   else if (val == "Bridge")
