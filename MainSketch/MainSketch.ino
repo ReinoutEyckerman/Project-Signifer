@@ -32,8 +32,11 @@ SensorController SensorControl(LowerSensor1, LowerSensor2, TopSensor, myser);
 /**************
  *  SETTINGS
  **************/
- String val = "Stop";
+ 
+//dit is het commando dat de F.I.S.T. doorgeeft aan de arduino.
+String val = "Auto";
 
+//Instelbare afstanden voor het algoritme
 const int SHOULDREACT = 14;
 const int DANGERCLOSE = 7;
 const int BRIDGEDIFF = 8;
@@ -51,10 +54,10 @@ int distRight = 0;        //BOTTOM RIGHT CALC
 int distLeft = 0;         //BOTTOM LEFT CALC
 int distBottom = 0;       //BOTTOM SHORTEST
 int distTop = 0;          //TOP DISTANCE
-int distAt0 = 0;          //TOP DISTANCE LEFT SIDE
-int distAt45 = 0;         //TOP DSISTANCE LEFT 45
-int distAt135 = 0;        //TOP DISTANCE RIGHT 45
-int distAt180 = 0;        //TOP DISTANCE RIGHT SIDE
+int distAt0 = 0;          //TOP DISTANCE RIGHT SIDE
+int distAt45 = 0;         //TOP DSISTANCE RIGHT 45
+int distAt135 = 0;        //TOP DISTANCE LEFT 45
+int distAt180 = 0;        //TOP DISTANCE LEFT SIDE
 
 /*******************
  *  SETUP & LOOP
@@ -124,14 +127,14 @@ void AutonomousMove() {
     }
   }
   
-  //Farther than SHOULDREACT
+  //Further than SHOULDREACT
   else {
     Driver.Forward();
   }
 }
 
 
-//Greedy recursive obstacle avoidance algorithm by Oliver
+//Recursive obstacle avoidance algorithm by Oliver
 void AvoidObstacle() {
   
   localDeflection = 0; // Reset local deflection, so we can commit to a certain direction.
@@ -143,26 +146,26 @@ void AvoidObstacle() {
     SideMeasurements();
 
     // Walls very close on both sides.
-    if (distAt0 < DANGERCLOSE && distAt180 < DANGERCLOSE) {
+    if (distAt180 < DANGERCLOSE && distAt0 < DANGERCLOSE) {
       Serial.println("LOCKDOWN");
       Driver.Backward();
       delay(500);
     }
     
     // No space on left side, but space on right side.
-    else if ((distAt0 < DANGERCLOSE || distAt45 < DANGERCLOSE) && distAt180 > DANGERCLOSE) {
+    else if ((distAt180 < DANGERCLOSE || distAt135 < DANGERCLOSE) && distAt0 > DANGERCLOSE) {
       GoRight(5);
       Serial.println("DANGER LEFT");
     }
     
     // No space on right side, but space on left side.
-    else if ((distAt180 < DANGERCLOSE || distAt135 < DANGERCLOSE) && distAt0 > DANGERCLOSE) {
+    else if ((distAt0 < DANGERCLOSE || distAt45 < DANGERCLOSE) && distAt180 > DANGERCLOSE) {
       GoLeft(5);
       Serial.println("DANGER RIGHT");
     }
     
     // More space on right side than on left side.
-    else if (distAt180 > distAt0 || distAt180 > distAt45) {
+    else if (distAt0 > distAt180 || distAt0 > distAt135) {
       
       // We've been going right already, so continue.
       if(localDeflection > 0){
@@ -183,7 +186,7 @@ void AvoidObstacle() {
     }
     
     // More space on left side than on right side.
-    else if (distAt0 > distAt180 || distAt0 > distAt135) {
+    else if (distAt180 > distAt0 || distAt180 > distAt45) {
       
       // We've been going left already, so continue.
       if(localDeflection < 0){
@@ -242,14 +245,14 @@ void Measurements() {
   distRight = SensorControl.GetDistance2();
   distTop = SensorControl.GetTopDistance();
 
- 
+ /*
     Serial.print("LEFT: ");
     Serial.print(distLeft);
     Serial.print(" | RIGHT: ");
     Serial.print(distRight);
     Serial.print(" | TOP: ");
     Serial.println(distTop);
-   
+   */
 }
 
 void SideMeasurements() {
@@ -258,6 +261,13 @@ void SideMeasurements() {
   distAt135 = SensorControl.GetTopAtAngle(135);
   distAt180 = SensorControl.GetTopAtAngle(180);
   SensorControl.LookStraight();
+  
+  /*
+  Serial.print("LEFT:");
+  Serial.print(distAt0);
+  Serial.print(" | RIGHT:");
+  Serial.println(distAt180);
+  */
 }
 
 bool CheckIsBridge() {

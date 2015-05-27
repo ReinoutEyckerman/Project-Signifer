@@ -8,7 +8,7 @@ This code released into public domain.
 #include "Arduino.h"
 #include "SensorController.h"
 #include "Servo.h"
-		 
+
 int SensorController::GetDiagDistance1(){
 	return _sensor1.getDistance();
 }
@@ -26,15 +26,15 @@ int SensorController::GetDiagDistanceMin(){
 }
 
 int SensorController::GetDistance1(){
-	return DiagToStraight(GetDiagDistance1());	
+	return DiagToStraight(GetDiagDistance1());
 }
 
 int SensorController::GetDistance2(){
-	return DiagToStraight(GetDiagDistance2());	
+	return DiagToStraight(GetDiagDistance2());
     }
 
 int SensorController::GetDistanceMin(){
-	return DiagToStraight(GetDiagDistanceMin());	
+	return DiagToStraight(GetDiagDistanceMin());
 }
 
 int SensorController::GetTopDistance(){
@@ -51,7 +51,7 @@ int SensorController::GetAngle(){
 }
 void SensorController::LookLeft(){
  for(pos;pos>=0;pos--){
-	_myservo.write(pos);		
+	_myservo.write(pos);
 	delay(10);
 }}
 void SensorController::LookRight(){
@@ -67,18 +67,18 @@ void SensorController::LookStraight()
 void SensorController::TurnServo(int degrees){
 	if(pos>degrees)
 	{
-		for(pos; pos >= degrees; pos--)  // goes from 0 degrees to 180 degrees 
-		{                                  // in steps of 1 degree 
-			_myservo.write(pos);              // tell servo to go to position in variable 'pos' 
-			delay(15);                       // waits 15ms for the servo to reach the position 
-		} 	
-	}	
+		for(pos; pos >= degrees; pos--)  // goes from 0 degrees to 180 degrees
+		{                                  // in steps of 1 degree
+			_myservo.write(pos);              // tell servo to go to position in variable 'pos'
+			delay(10);                       // waits 15ms for the servo to reach the position
+		}
+	}
   else
   {
 		for(pos; pos <= degrees; pos++)
 		{
 			_myservo.write(pos);
-			delay(15);
+			delay(10);
 		}
 	}
 	}
