@@ -32,6 +32,7 @@ SensorController SensorControl(LowerSensor1, LowerSensor2, TopSensor, myser);
 /**************
  *  SETTINGS
  **************/
+ String val = "Auto";
 
 const int SHOULDREACT = 14;
 const int DANGERCLOSE = 7;
@@ -99,7 +100,7 @@ void AutonomousMove() {
   Measurements();
 
   // Closer than SHOUDLREACT?
-  if (distBottom < SHOULDREACT) {
+  if (distBottom < SHOULDREACT || distTop < SHOULDREACT) {
 
     // In case of bridge
     if (CheckIsBridge()) {
