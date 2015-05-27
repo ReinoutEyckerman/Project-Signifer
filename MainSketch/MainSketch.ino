@@ -42,7 +42,6 @@ const int BRIDGEDIFF = 8;
  *************/
 
 bool bridgeGoingUp = false;
-String val = "Auto";
 
 int deflection = 0;       // Keep track of every turn made. in 100ms steps. positive is right, negative is left.
 int localDeflection = 0;  // Local deflection so we can commit to 1 direction, instead of twitching.
@@ -73,7 +72,6 @@ void loop() {
   {
     val = Serial.readString();
     Serial.println(val);
-    digitalWrite(13, HIGH);
   }
   if (val == "Stop")
     Driver.Stop();
