@@ -181,7 +181,7 @@ void AvoidObstacle() {
       
       else{
         GoRight(3);
-        Serial.println("Right just because");
+        Serial.println("Right because space");
       }
     }
     
@@ -202,7 +202,7 @@ void AvoidObstacle() {
       
       else {
         GoLeft(3);
-        Serial.println("Left just because");
+        Serial.println("Left because space");
       }
     }
     
@@ -262,12 +262,12 @@ void SideMeasurements() {
   distAt180 = SensorControl.GetTopAtAngle(180);
   SensorControl.LookStraight();
   
-  /*
+  
   Serial.print("LEFT:");
   Serial.print(distAt0);
   Serial.print(" | RIGHT:");
   Serial.println(distAt180);
-  */
+  
 }
 
 bool CheckIsBridge() {

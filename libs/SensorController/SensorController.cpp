@@ -52,12 +52,12 @@ int SensorController::GetAngle(){
 void SensorController::LookLeft(){
  for(pos;pos>=0;pos--){
 	_myservo.write(pos);
-	delay(10);
+	delay(2);
 }}
 void SensorController::LookRight(){
    for(pos;pos<180;pos++){
 	_myservo.write(pos);
-	delay(10);
+	delay(2);
 }}
 void SensorController::LookStraight()
 {
@@ -70,7 +70,7 @@ void SensorController::TurnServo(int degrees){
 		for(pos; pos >= degrees; pos--)  // goes from 0 degrees to 180 degrees
 		{                                  // in steps of 1 degree
 			_myservo.write(pos);              // tell servo to go to position in variable 'pos'
-			delay(10);                       // waits 15ms for the servo to reach the position
+			delay(2);                       // waits x ms for the servo to reach the position
 		}
 	}
   else
@@ -78,7 +78,7 @@ void SensorController::TurnServo(int degrees){
 		for(pos; pos <= degrees; pos++)
 		{
 			_myservo.write(pos);
-			delay(10);
+			delay(2);
 		}
 	}
 	}
