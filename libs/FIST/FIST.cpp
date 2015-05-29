@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include "FIST.h"
+
 //Arrays containing values of certain gestures.
 
 int Flat[] = {0, 0, 1, 0, 0, 1};
@@ -8,7 +9,7 @@ int Bump[] = {0, 0, 1, 0, 1, 0};
 int Stop[] = {0, -1, 0, 0, -1, 0};
 int Revolution[] = {0, -1, 0, 0, 0, 1};
 
-int Down[] = { 0, 0, 1, 0, 1, 1};
+int Down[] = { 0, 1, 0, 0, 1, 0};
 int Clench[] = {0, 1, 0, 0, 0, -1};
 
 int Beg[] = {0, 0, -1, 0 , 0, -1};
@@ -23,6 +24,8 @@ int temp[] = {0, 0, 0, 0, 0, 0};
 int current[] = {0, 0, 0, 0, 0, 0};
 String previous;
 
+//Constructor
+
 FIST::FIST(int PalmX, int PalmY, int PalmZ, int KnuckleX, int KnuckleY, int KnuckleZ, char Hand, int ButtonPin)
 {
 	this->PalmX=PalmX;
@@ -35,6 +38,7 @@ FIST::FIST(int PalmX, int PalmY, int PalmZ, int KnuckleX, int KnuckleY, int Knuc
 	this->ButtonPin=ButtonPin;
 	int x[]={1,0,0,1,0,0};
 	int y[]={-1,0,0,-1,0,0};
+	//Setting gestures based on left or right hand
 	if(Hand=='l')
 	{
 		ByteArrayCopy(Push,x ,6);
@@ -54,7 +58,7 @@ void FIST::Run() {
   CheckGestures();
 }
 
-//Loop
+//Read the data
 void FIST::Measurements() {
   current[0] = AcceleroConverter(analogRead(PalmX));
   current[1] = AcceleroConverter(analogRead(PalmY));
@@ -64,20 +68,21 @@ void FIST::Measurements() {
   current[5] = AcceleroConverter(analogRead(KnuckleZ));
 }
 
-//Filters Sensordata to data program can easily process
+//Filters Sensordata to data the program can easily process
 int FIST::AcceleroConverter(int c)
 {
   //325-340 stable, 385-410 ud, 255-285 min  240 max 430
-  if (c < 290)
+  if (c < 300)
     return -1;
   if (c < 380)
     return 0;
   return 1;
 }
 
+String x;
+
 //Compares input to gestures
 void FIST::CheckGestures() {
-  String x;
   if (!ByteArrayCompare(current, temp, 6))
   {
     ByteArrayCopy(temp, current, 6);
