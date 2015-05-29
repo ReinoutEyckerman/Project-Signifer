@@ -109,9 +109,10 @@ void loop() {
  ***********************/
 
 void AutonomousMove() {
+  // Measure the bottom sensors and the top sensor straight ahead.
   Measurements();
 
-  // Closer than SHOUDLREACT?
+  // Closer than SHOUDLREACT? Then we should do something.
   if (distBottom < SHOULDREACT || distTop < SHOULDREACT) {
 
     // In case of bridge
@@ -127,25 +128,26 @@ void AutonomousMove() {
     }
   }
   
-  //Further than SHOULDREACT
+  //Further than SHOULDREACT, don't react.
   else {
     Driver.Forward();
   }
 }
 
 
-//Recursive obstacle avoidance algorithm by Oliver
+// Recursive obstacle avoidance algorithm
 void AvoidObstacle() {
   
-  localDeflection = 0; // Reset local deflection, so we can commit to a certain direction.
-  Serial.println("Reset preference");
+  localDeflection = 0; // Reset local deflection, so we can commit to a certain direction once we start turning.
   
   // While the obstacle is in front of us.
   while (distBottom < SHOULDREACT) {
     Driver.Stop();
+    
+    //Measure at 0, 45, 135, and 180 degrees.
     SideMeasurements();
 
-    // Walls very close on both sides.
+    // Walls very close on all sides !
     if (distAt180 < DANGERCLOSE && distAt0 < DANGERCLOSE) {
       Serial.println("LOCKDOWN");
       Driver.Backward();
@@ -173,12 +175,13 @@ void AvoidObstacle() {
         Serial.println("Continue right");
       }
       
-      // Overall, we've made more left turns already, so chances are we need to go right now.
+      // Overall, we've made more left turns already, so we guess we need to go right now.
       else if(deflection <= 0){
         GoRight(5);
         Serial.println("Guess right");
       }
       
+      // There's more space right but we're not sure yet, so we take a small turn.
       else{
         GoRight(3);
         Serial.println("Right because space");
@@ -194,12 +197,13 @@ void AvoidObstacle() {
         Serial.println("Continue left");
       }
       
-      // Overall, we've made more right turns already, so chances are we need to go left now.
+      // Overall, we've made more right turns already, so we guess we need to go left now.
       else if(deflection >= 0){
         GoLeft(5);
         Serial.println("Guess left");
       }
       
+      // There's more space left but we're not sure yet, so we take a small turn.
       else {
         GoLeft(3);
         Serial.println("Left because space");
@@ -239,6 +243,7 @@ void AvoidObstacle() {
   }
 }
 
+// Measure the bottom and top sensors.
 void Measurements() {
   distBottom = SensorControl.GetDistanceMin();
   distLeft = SensorControl.GetDistance1();
@@ -255,6 +260,7 @@ void Measurements() {
    */
 }
 
+// Measure at 0, 45, 135, and 180 degrees with the top sensor.
 void SideMeasurements() {
   distAt0 = SensorControl.GetTopAtAngle(0);
   distAt45 = SensorControl.GetTopAtAngle(45);
@@ -262,14 +268,15 @@ void SideMeasurements() {
   distAt180 = SensorControl.GetTopAtAngle(180);
   SensorControl.LookStraight();
   
-  
+  /*  
   Serial.print("LEFT:");
   Serial.print(distAt0);
   Serial.print(" | RIGHT:");
   Serial.println(distAt180);
-  
+  */
 }
 
+// Checks for a bridge, returns true is it's a bridge, false otherwise.
 bool CheckIsBridge() {
   SensorControl.LookStraight();
   Measurements();
@@ -281,14 +288,19 @@ bool CheckIsBridge() {
 
 //Sraighten the robot so it's perpendicular to a wall or a bridge.
 void StraightenPerpendicular() {
+  
+  //Maximum difference between front sensors to consider it perpendicular.
   const int TOLERANCECM = 2;
 
   while (true) {
     Measurements();
 
+    // Check if we're perpendicular (considering the set tolerance)
     if (distLeft + TOLERANCECM >= distRight && distLeft - TOLERANCECM <= distRight) {
       return;
     }
+    
+    // Else adjust 
     else {
       if (distLeft > distRight) {
         GoLeft(1);
@@ -301,6 +313,7 @@ void StraightenPerpendicular() {
   }
 }
 
+// Go right, each step is a 100 ms turn. Also counts the deflections so the algorithm learns something new.
 void GoRight(int steps) {
   Driver.RotateRight();
   delay(100 * steps);
@@ -309,6 +322,7 @@ void GoRight(int steps) {
   localDeflection += steps;
 }
 
+// Go left, each step is a 100 ms turn. Also counts the deflections so the algorithm learns something new.
 void GoLeft(int steps) {
   Driver.RotateLeft();
   delay(100 * steps);
@@ -321,6 +335,7 @@ void GoLeft(int steps) {
  * VARIOUS FUNCTIONS
  **********************/
 
+// Toggles the tower's bridge to go up or down.
 void ToggleBridge() {
   if (bridgeGoingUp)
     BridgeMotor.DriveForward(230);
