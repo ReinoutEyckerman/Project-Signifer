@@ -32,9 +32,9 @@ SensorController SensorControl(LowerSensor1, LowerSensor2, TopSensor, myser);
 /**************
  *  SETTINGS
  **************/
- 
+
 //dit is het commando dat de F.I.S.T. doorgeeft aan de arduino.
-String val = "Auto";
+String val = "Stop";
 
 //Instelbare afstanden voor het algoritme
 const int SHOULDREACT = 14;
@@ -45,7 +45,9 @@ const int BRIDGEDIFF = 8;
  *  GLOBALS
  *************/
 
-bool bridgeGoingUp = false;
+bool bridgeGoingUp = false;  //Checks which direction the bridge is going next.
+bool autonomous = false;  //Holds if the car is moving on its own.
+int rotationCount = 0;    //Keep track of the time going left when driving manual.
 
 int deflection = 0;       // Keep track of every turn made. in 100ms steps. positive is right, negative is left.
 int localDeflection = 0;  // Local deflection so we can commit to 1 direction, instead of twitching.
@@ -67,40 +69,21 @@ void setup() {
   myser.attach(Servopin);
   SensorControl.LookStraight();
   Serial.begin(9600);
-  pinMode(2, OUTPUT);
-  pinMode(13, OUTPUT);
 }
 
 void loop() {
 
-  digitalWrite(13, LOW);
   if ( Serial.available() )      // if data is available to read
   {
     val = Serial.readString();
     Serial.println(val);
+    if(val=="Switchmode")
+      autonomous=!autonomous;
   }
-  if (val == "Stop")
-    Driver.Stop();
-  else if (val == "Auto")
+  if(autonomous)
     AutonomousMove();
-  else if (val == "Forward")
-    Driver.Forward();
-  else if (val == "Left"){
-    Driver.RotateLeft();
-    delay(300);
-    val="Stop";
-  }
-  else if (val == "Right"){
-    Driver.RotateRight();
-    delay(300);
-    val="Stop";
-  }
-    
-  else if (val == "Back")
-    Driver.Backward();
-  else if (val == "Bridge")
-    ToggleBridge();
-  else Driver.Stop();
+  else
+    Control();
   delay(200);
 }
 
@@ -127,7 +110,7 @@ void AutonomousMove() {
       AvoidObstacle();
     }
   }
-  
+
   //Further than SHOULDREACT, don't react.
   else {
     Driver.Forward();
@@ -137,13 +120,13 @@ void AutonomousMove() {
 
 // Recursive obstacle avoidance algorithm
 void AvoidObstacle() {
-  
+
   localDeflection = 0; // Reset local deflection, so we can commit to a certain direction once we start turning.
-  
+
   // While the obstacle is in front of us.
   while (distBottom < SHOULDREACT) {
     Driver.Stop();
-    
+
     //Measure at 0, 45, 135, and 180 degrees.
     SideMeasurements();
 
@@ -153,86 +136,86 @@ void AvoidObstacle() {
       Driver.Backward();
       delay(500);
     }
-    
+
     // No space on left side, but space on right side.
     else if ((distAt180 < DANGERCLOSE || distAt135 < DANGERCLOSE) && distAt0 > DANGERCLOSE) {
       GoRight(5);
       Serial.println("DANGER LEFT");
     }
-    
+
     // No space on right side, but space on left side.
     else if ((distAt0 < DANGERCLOSE || distAt45 < DANGERCLOSE) && distAt180 > DANGERCLOSE) {
       GoLeft(5);
       Serial.println("DANGER RIGHT");
     }
-    
+
     // More space on right side than on left side.
     else if (distAt0 > distAt180 || distAt0 > distAt135) {
-      
+
       // We've been going right already, so continue.
-      if(localDeflection > 0){
+      if (localDeflection > 0) {
         GoRight(5);
         Serial.println("Continue right");
       }
-      
+
       // Overall, we've made more left turns already, so we guess we need to go right now.
-      else if(deflection <= 0){
+      else if (deflection <= 0) {
         GoRight(5);
         Serial.println("Guess right");
       }
-      
+
       // There's more space right but we're not sure yet, so we take a small turn.
-      else{
+      else {
         GoRight(3);
         Serial.println("Right because space");
       }
     }
-    
+
     // More space on left side than on right side.
     else if (distAt180 > distAt0 || distAt180 > distAt45) {
-      
+
       // We've been going left already, so continue.
-      if(localDeflection < 0){
+      if (localDeflection < 0) {
         GoLeft(5);
         Serial.println("Continue left");
       }
-      
+
       // Overall, we've made more right turns already, so we guess we need to go left now.
-      else if(deflection >= 0){
+      else if (deflection >= 0) {
         GoLeft(5);
         Serial.println("Guess left");
       }
-      
+
       // There's more space left but we're not sure yet, so we take a small turn.
       else {
         GoLeft(3);
         Serial.println("Left because space");
       }
     }
-    
-    // Both sides have the same amount of space. 
-    else{
-      
+
+    // Both sides have the same amount of space.
+    else {
+
       // We've been going left already, so continue.
-      if(localDeflection < 0){
-          GoLeft(5);
-          Serial.println("Continue Left");
+      if (localDeflection < 0) {
+        GoLeft(5);
+        Serial.println("Continue Left");
       }
-      
-      // We've been going right already, so continue. 
-      else if (localDeflection > 0){
+
+      // We've been going right already, so continue.
+      else if (localDeflection > 0) {
         GoRight(5);
         Serial.println("Continue Right");
       }
-      
+
       //Overall more left turns made, or completely equal, so we guess for a right turn now.
-      else if(deflection <= 0){
+      else if (deflection <= 0) {
         GoRight(5);
         Serial.println("Guess Right");
       }
-      
+
       //Overall more right turns made, so we guess for a left turn now.
-      else if(deflection > 0){
+      else if (deflection > 0) {
         GoLeft(5);
         Serial.println("Guess Left");
       }
@@ -250,14 +233,14 @@ void Measurements() {
   distRight = SensorControl.GetDistance2();
   distTop = SensorControl.GetTopDistance();
 
- /*
-    Serial.print("LEFT: ");
-    Serial.print(distLeft);
-    Serial.print(" | RIGHT: ");
-    Serial.print(distRight);
-    Serial.print(" | TOP: ");
-    Serial.println(distTop);
-   */
+  /*
+     Serial.print("LEFT: ");
+     Serial.print(distLeft);
+     Serial.print(" | RIGHT: ");
+     Serial.print(distRight);
+     Serial.print(" | TOP: ");
+     Serial.println(distTop);
+    */
 }
 
 // Measure at 0, 45, 135, and 180 degrees with the top sensor.
@@ -267,8 +250,8 @@ void SideMeasurements() {
   distAt135 = SensorControl.GetTopAtAngle(135);
   distAt180 = SensorControl.GetTopAtAngle(180);
   SensorControl.LookStraight();
-  
-  /*  
+
+  /*
   Serial.print("LEFT:");
   Serial.print(distAt0);
   Serial.print(" | RIGHT:");
@@ -288,7 +271,7 @@ bool CheckIsBridge() {
 
 //Sraighten the robot so it's perpendicular to a wall or a bridge.
 void StraightenPerpendicular() {
-  
+
   //Maximum difference between front sensors to consider it perpendicular.
   const int TOLERANCECM = 2;
 
@@ -299,8 +282,8 @@ void StraightenPerpendicular() {
     if (distLeft + TOLERANCECM >= distRight && distLeft - TOLERANCECM <= distRight) {
       return;
     }
-    
-    // Else adjust 
+
+    // Else adjust
     else {
       if (distLeft > distRight) {
         GoLeft(1);
@@ -343,3 +326,28 @@ void ToggleBridge() {
   bridgeGoingUp = !bridgeGoingUp;
 }
 
+void Control() {
+  if ( val == "Left" || val == "Right")
+  {
+    if (rotationCount < 2 ) 
+      rotationCount++;
+     
+    else {
+      rotationCount = 0;
+      val = "Stop";
+    }
+  }
+  if (val == "Stop")
+    Driver.Stop();
+    else if (val == "Forward")
+    Driver.Forward();
+  else if (val == "Left")
+    Driver.RotateLeft();
+  else if (val == "Right")
+    Driver.RotateRight();
+  else if (val == "Back")
+    Driver.Backward();
+  else if (val == "Bridge")
+    ToggleBridge();
+  else Driver.Stop();
+}

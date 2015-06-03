@@ -1,34 +1,39 @@
+#Imports
 import serial
 from time import sleep
 import pygame
 
-#Command translator lists
-LeftCommands={"Flat":"Stop", "Bump":"Forward", "Left": "Forward","Right":"Accelerate", "Beg":"Stop", "Flex":"Reverse", "Down":"BridgeDown", "Stop": "BridgeUp" }
-RightCommands={"Take":"Right", "Push":"Left", "Button":"Stop" }
+#Command Dictionary
+LeftCommands={"Flat":"Stop", "Bump":"Forward", "Take": "Forward","Right":"Accelerate", "Beg":"Stop", "Flex":"Back", "Down":"BridgeDown", "Stop": "BridgeUp" }
+RightCommands={"Take":"Right", "Push":"Left", "Button":"Switchmode" }
 
-#Initialization
+#Info
+print "Initiating"
+
+#Initiation code
 pygame.mixer.init()
 Arduino=serial.Serial('/dev/ttyUSB0', 9600)
 BluetoothSerial2 = serial.Serial("/dev/rfcomm0", baudrate=9600)
 BluetoothSerial1 = serial.Serial("/dev/rfcomm1", baudrate=9600)
 
-#Song tracking variables
+#State Variables
 paused = False
 playing=False
 
-#Plays a song
+#Plays music
 def playSong(song):
 	stopSong()
 	pygame.mixer.music.load(song)
 	pygame.mixer.music.play()
 	playing=True
 	paused=False
-#Stops a song
+
+#Stops music
 def stopSong():
 	pygame.mixer.music.stop()
 	playing=False
 
-#Pauses or resumes a song
+#Pauses or resumes a paused song
 def PauseSong():
 	if playing:
 		if paused:
@@ -38,20 +43,21 @@ def PauseSong():
 			pygame.mixer.music.unpause()
 			paused=False
 
-#Checks input and sends it to arduino
+#Compares the input to the commands and sends this to the Arduino
 def CheckInput(input):
-	print input
+	print "Input: "+input
 	input=input[:-2]
-	print input
-	if input[0] == 'l': 
-		if input[1:] in LeftCommands:
-			Arduino.write(LeftCommands[input[1:]])
-	else:
-		if input[1:] in RightCommands:
-			Arduino.write(RightCommands[input[1:]])	
+	print "Filtered Input: "+ input
+	if input!=None:
+		if input[0] == 'l': 
+			if input[1:] in LeftCommands:
+				Arduino.write(LeftCommands[input[1:]])
+		else:
+			if input[1:] in RightCommands:
+				Arduino.write(RightCommands[input[1:]])	
 	CheckMusic(input)
 
-#Checks imput and checks if there are songs ready to be played
+#Compares the input to the playable songs
 def CheckMusic(input):
 	if input[0] == 'r':
 		if input[1:]=="Revolution":
@@ -60,17 +66,22 @@ def CheckMusic(input):
 			PauseSong()
 		elif input[1:]=="Beg":
 			playSong("/home/pi/Work/Valkyries.mp3")
-		elif input[1:]=="Push":
-			playSong("/home/pi/Work/Johnny.mp3")
+		elif input[1:]=="Down":
+			playSong("/home/pi/Work/Hobbits.mp3")
 		elif input[1:]=="Stop":
 			playSong("/home/pi/Work/MarchOfTheWarElephants.mp3")
 		elif input[1:]=="Flex":
 			stopSong()
 
-#Main loop that checks for data
+
+print "Commencing Code..."
+
+#Loop doing the work
 while True:
 	if BluetoothSerial1.inWaiting() > 0:
-		CheckInput(BluetoothSerial1.readline())
+		x = BluetoothSerial1.readline()
+		CheckInput(x)
 	if BluetoothSerial2.inWaiting() > 0:
-		CheckInput(BluetoothSerial2.readline())
-	sleep(0.3)
+		x = BluetoothSerial2.readline()
+		CheckInput(x)
+	sleep(0.2)

@@ -80,9 +80,18 @@ int FIST::AcceleroConverter(int c)
 }
 
 String x;
-
+bool enabled;
 //Compares input to gestures
 void FIST::CheckGestures() {
+  if(digitalRead(ButtonPin)==HIGH&&!enabled)
+  {
+    enabled=true;
+    String temp="Button";
+    String y=Hand+temp;
+    Serial.println(y);  
+  }
+  else enabled=false;
+  
   if (!ByteArrayCompare(current, temp, 6))
   {
     ByteArrayCopy(temp, current, 6);
